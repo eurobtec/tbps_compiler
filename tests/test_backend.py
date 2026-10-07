@@ -65,7 +65,7 @@ def _default_rom():
     if env:
         return env
     here = os.path.dirname(__file__)
-    cand = os.path.abspath(os.path.join(here, "..", "..", "..", "firmware", "hex",
+    cand = os.path.abspath(os.path.join(here, "..", "..", "..", "firmware", "legacy", "hex",
                                         "M2764A@DIP28.HEX"))
     return cand if os.path.exists(cand) else None
 

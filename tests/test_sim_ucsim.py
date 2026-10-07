@@ -17,8 +17,8 @@ The tests SKIP (not fail) when the ucSim binary or ROM image is unavailable, so
 the pure-Python unit tests still run in a bare environment.  Point them at your
 build with::
 
-    export UCSIM_51=/home/.../ucsim/src/sims/s51.src/ucsim_51
-    export ROB3_HEX=/home/.../rob3/firmware/hex/M2764A@DIP28.HEX
+    export UCSIM_51=<path-to-ucsim>/src/sims/s51.src/ucsim_51
+    export ROB3_HEX=<path-to-rob3>/firmware/legacy/hex/M2764A@DIP28.HEX
 """
 
 from __future__ import annotations
@@ -45,13 +45,13 @@ IRAM_BODY_PAGE = 0x3F     # = 0x81
 
 
 def _default_rom() -> str | None:
-    """Resolve the ROB3 ROM: ROB3_HEX, else the in-repo firmware/hex image."""
+    """Resolve the ROB3 ROM: ROB3_HEX, else the in-repo firmware/legacy/hex image."""
     env = rob3_ucsim.default_hex()
     if env:
         return env
     here = os.path.dirname(__file__)
     cand = os.path.abspath(
-        os.path.join(here, "..", "..", "..", "firmware", "hex", "M2764A@DIP28.HEX")
+        os.path.join(here, "..", "..", "..", "firmware", "legacy", "hex", "M2764A@DIP28.HEX")
     )
     return cand if os.path.exists(cand) else None
 

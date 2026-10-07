@@ -203,7 +203,7 @@ cp editors/vim/ftdetect/tbps.vim  ~/.config/nvim/ftdetect/
 Or add the directory to your `runtimepath` directly:
 
 ```vim
-set rtp^=/path/to/rob3/tools/tbps-compiler/editors/vim
+set rtp^=<path-to-tbps-compiler>/editors/vim
 ```
 
 Highlights instructions (`MARK`/`POS`/`TIM`/`GOTO`/`IF`/`OUT`/`NOP`),
@@ -216,7 +216,7 @@ A nano syntax file is in `editors/nano/tbps.nanorc`. Add this line to your
 `~/.nanorc`:
 
 ```
-include "/path/to/rob3/tools/tbps-compiler/editors/nano/tbps.nanorc"
+include "<path-to-tbps-compiler>/editors/nano/tbps.nanorc"
 ```
 
 (Or copy it into nano's include dir, e.g. `/usr/share/nano/` or
@@ -250,8 +250,8 @@ same token classes as the Vim definition. (`.dat` is generic — drop it from th
 .venv/bin/pytest tests/test_encoding.py
 
 # + ucSim verification against the real ROM (needs the project's ucsim build)
-export UCSIM_51=/path/to/ucsim/src/sims/s51.src/ucsim_51
-export ROB3_HEX=/path/to/rob3/firmware/hex/M2764A@DIP28.HEX
+export UCSIM_51=<path-to-ucsim>/src/sims/s51.src/ucsim_51
+export ROB3_HEX=<path-to-rob3>/firmware/legacy/hex/M2764A@DIP28.HEX
 .venv/bin/pytest
 ```
 
