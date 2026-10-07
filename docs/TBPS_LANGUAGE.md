@@ -2,8 +2,8 @@
 
 *Teach Box Programming System* language for the ROB3 (Intel 8031 firmware).
 This is the **authoritative** reference used by `tbps-compiler`: the grammar,
-value ranges, and the **byte-level program encoding verified against the ROM**
-(`firmware/src/annotated/program.asm`, `rs232.asm`) and in ucSim.
+value ranges, and the **byte-level program encoding verified against the ROB3
+8031 ROM** and in ucSim.
 
 Provenance tags: `[BYTE]` ROM-exact · `[SIM]` observed in ucSim · `[INFER]`
 hypothesis. See also the prose manual (`hardware/teachbox/README.md`) and the
@@ -94,7 +94,7 @@ Programs are stored in external SRAM. Each instruction occupies a **fixed
 | `MARK m` | `0x1F` | `m` | label definition (preprocessor records PC in page-0x80 table) | [SIM] |
 | `POS a . n` | `0x60 + (a−1)` | `n` | **move**: `target[0x40+axis] = n`, arms motion | [SIM] |
 | `POS a . n , s` | `0x70 + (a−1)` | `n`, `s` | **move + speed**: target + `speed[0x70+axis]`, arms motion | [SIM] |
-| `POS` | `0x07` | 6 bytes | store current position (all axes) | [INFER] |
+| `POS` | `0x07` | 6 bytes | store current position (all axes) | [SIM] opcode / [INFER] pot-capture |
 | `TIM t` | `0x18` | `t`&0xFF, `t`>>8 | delay → IRAM `0x1A/0x1B` | [SIM] |
 | `OUT k +` | `0x10 + (k−1)&3` | `0x00` | set output k LOW (active) | [SIM] |
 | `OUT k −` | `0x10 + (k−1)&3` | `0x01` | clear output k HIGH | [SIM] |

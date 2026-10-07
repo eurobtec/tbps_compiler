@@ -4,8 +4,9 @@ The inverse of :mod:`tbps_compiler.codegen`.  Decodes the fixed 8-byte-slot
 program body (as stored at SRAM 0x8100) back into readable TBPS instructions,
 using the same ROM-verified opcode map as the compiler (see :mod:`tbps_compiler.isa`).
 
-Opcodes whose exact operand ordering is ``[INFER]`` (GOTO/IF) are decoded on a
-best-effort basis and annotated.
+GOTO's operand ordering (operand[0] = label) is ``[SIM]`` (verified by
+tests/test_sim_ucsim.py).  IF's label+mask operand ordering is decoded on a
+best-effort basis from the ROM decode and annotated.
 """
 
 from __future__ import annotations

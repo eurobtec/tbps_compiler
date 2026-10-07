@@ -14,7 +14,7 @@ Both take an ``engine`` that is duck-typed: any object with a
 e.g. :class:`rob3_ucsim.UCSimEngine` or :class:`pyucsim.UCSimEngine`.  This keeps
 ``tbps_compiler`` free of a hard simulator dependency.
 
-Firmware landmarks (firmware/src/annotated/program.asm, rs232.asm):
+Firmware landmarks (ROB3 8031 ROM):
 """
 
 from __future__ import annotations

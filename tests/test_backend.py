@@ -1,4 +1,4 @@
-"""Native 8051 backend tests: generation, assembly, and ucSim equivalence."""
+"""Compiled backend tests: generation, assembly, and ucSim equivalence."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import tempfile
 import pytest
 
 from tbps_compiler import compile_source
-from tbps_compiler.native import generate_asm
+from tbps_compiler.backend import generate_asm
 
 
 # --- generation (no tools needed) -------------------------------------------
@@ -42,13 +42,13 @@ def _have_sdas():
 
 
 @pytest.mark.skipif(not _have_sdas(), reason="sdas8051/sdld not installed")
-def test_native_assembles():
+def test_compiled_assembles():
     asm = generate_asm("MARK 0\nPOS 1 . 128\nTIM 3\nOUT 1 +\nIF 2 . 0\nGOTO 0\nINS .",
                        org=0x2000, name="prog")
     d = tempfile.mkdtemp()
     a = os.path.join(d, "p.asm")
     open(a, "w").write(asm)
-    from tbps_compiler.native import ISA_INC
+    from tbps_compiler.backend import ISA_INC
     incdir = os.path.dirname(ISA_INC)
     r = subprocess.run(["sdas8051", "-I" + incdir, "-l", "-o", a],
                        cwd=d, capture_output=True, text=True)
@@ -56,7 +56,7 @@ def test_native_assembles():
     assert os.path.exists(os.path.join(d, "p.rel"))
 
 
-# --- ucSim equivalence: native run == interpreter run -----------------------
+# --- ucSim equivalence: compiled run == interpreter run -----------------------
 rob3_ucsim = pytest.importorskip("rob3_ucsim")
 
 
@@ -71,7 +71,7 @@ def _default_rom():
 
 
 @pytest.mark.skipif(not _have_sdas(), reason="sdas8051/sdld not installed")
-def test_native_equivalent_to_interpreter():
+def test_compiled_equivalent_to_interpreter():
     try:
         binary = rob3_ucsim.find_ucsim()
     except FileNotFoundError:
@@ -97,11 +97,11 @@ def test_native_equivalent_to_interpreter():
     it_do = e._dump_byte("iram", 0x1f)
     e.close()
 
-    # native: assemble, load into code space, step, read state
+    # compiled: assemble, load into code space, step, read state
     asm = generate_asm(SRC, org=0x2000, name="prog")
     d = tempfile.mkdtemp()
     a = os.path.join(d, "p.asm"); open(a, "w").write(asm)
-    from tbps_compiler.native import ISA_INC
+    from tbps_compiler.backend import ISA_INC
     incdir = os.path.dirname(ISA_INC)
     subprocess.run(["sdas8051", "-I" + incdir, "-l", "-o", a], cwd=d, check=True, capture_output=True)
     subprocess.run(["sdld", "-i", "-x", "-m", os.path.join(d, "p.ihx"),
@@ -126,8 +126,8 @@ def test_native_equivalent_to_interpreter():
     nt_do = e._dump_byte("iram", 0x1f)
     e.close()
 
-    assert nt_t == it_t, f"targets differ: native={nt_t} interp={it_t}"
-    assert nt_do == it_do, f"dout differs: native=0x{nt_do:02x} interp=0x{it_do:02x}"
+    assert nt_t == it_t, f"targets differ: compiled={nt_t} interp={it_t}"
+    assert nt_do == it_do, f"dout differs: compiled=0x{nt_do:02x} interp=0x{it_do:02x}"
 
 
 if __name__ == "__main__":

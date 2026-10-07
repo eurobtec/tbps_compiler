@@ -13,9 +13,8 @@ firmware repo **[eurobtec/rob3](https://github.com/eurobtec/rob3)**; the
 ucSim-verification tests use **[eurobtec/rob3_ucsim](https://github.com/eurobtec/rob3_ucsim)**
 (optional — they skip cleanly if it or the simulator isn't installed).
 
-Every opcode is **derived from and verified against the ROM**
-(`rob3/firmware/src/annotated/program.asm`, `rs232.asm`) and the real firmware
-running in ucSim.
+Every opcode is **derived from and verified against the ROB3 8031 ROM** and the
+real firmware running in ucSim.
 
 ## Why the earlier ad-hoc compiler was replaced
 
@@ -38,9 +37,9 @@ Full grammar, value ranges, SRAM layout, and corner-case semantics:
 |---|---|---|---|
 | `MARK m` | `0x1F` | `m` (label; recorded in page-0x80 table) | [BYTE][SIM] |
 | `POS a . n` | `0x60 + (a-1)` | `n` → `target[0x40+axis]`, arms motion | [SIM] |
-| `POS` (store all) | `0x07` | 6 position bytes | [INFER] |
-| `TIM t` | `0x18` | `t` lo, `t` hi → `0x1A/0x1B` | [BYTE] reads |
-| `OUT k +/-` | `0x10 + (k-1)&3` | state (`+`=0x00 LOW, `-`=0x01 HIGH) | [BYTE] reads / [INFER] |
+| `POS` (store all) | `0x07` | 6 position bytes | [SIM] opcode / [INFER] pot-capture |
+| `TIM t` | `0x18` | `t` lo, `t` hi → `0x1A/0x1B` | [SIM] |
+| `OUT k +/-` | `0x10 + (k-1)&3` | state (`+`=0x00 LOW, `-`=0x01 HIGH) | [SIM] |
 | `GOTO m` | `0x34` | `m` (label; operand[0]) | [SIM] |
 | `GOTO m . n` | `0x36` | `m`, `n` (counted) | [SIM] |
 | `IF i [. m]` | `0x32` | `m` (label), `1<<(i-1)` (mask); jump when `(mask & P1)==0` | [SIM]/[BYTE] |
@@ -53,8 +52,11 @@ Program store layout (external HM6264 SRAM, `xram` in ucSim):
 `0x8100`+ = program body in 8-byte slots. PC = IRAM `0x66:0x67`.
 
 Provenance tags: `[BYTE]` ROM-exact, `[SIM]` observed in ucSim, `[INFER]`
-hypothesis (per-opcode operand ordering for TIM/OUT/GOTO/IF is partly inferred,
-as the firmware annotations themselves tag it).
+hypothesis. The per-opcode operand orderings (TIM/OUT/GOTO/IF) are `[SIM]` —
+each is run through the real ROM in `tests/test_sim_ucsim.py`. The only
+remaining `[INFER]` is the `POS` store-all *semantic* (that a bare `POS`
+captures the live pot positions), which the compiler emits as a zero
+placeholder.
 
 ## Install
 
@@ -286,5 +288,4 @@ Teachbox keypad.* The keypad **position-teaching** path (axis-select, +/- jog,
 but the **instruction-key → stored-program** path (pressing `MARK`/`GOTO`/`IF`/
 `OUT`/`TIM` to build the SRAM program body) is **not yet reverse-engineered**
 (the firmware annotations flag those key handlers `[INFER]`). This is a firmware
-subsystem independent of the compiler; see
-`firmware/src/annotated/teachbox.asm` and the `rob3-firmware-map` skill.
+subsystem independent of the compiler; see the ROB3 firmware project.

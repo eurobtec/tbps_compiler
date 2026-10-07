@@ -1,6 +1,6 @@
 """TBPS code generation: AST -> ROM-faithful SRAM program image.
 
-Target layout (firmware/src/annotated/program.asm, [BYTE][SIM]):
+Target layout (ROB3 8031 ROM, [BYTE][SIM]):
 
 * The program BODY is a stream of fixed **8-byte slots** starting at SRAM
   ``0x8100`` (page 0x81).  ``prog_exec`` fetches one opcode per slot and
@@ -23,9 +23,11 @@ Target layout (firmware/src/annotated/program.asm, [BYTE][SIM]):
 
 PROVENANCE: the 8-byte slot, MARK=0x1F label-table mechanism, END=bit7, and the
 header/0x83 sentinel are [BYTE]/[SIM].  The exact *operand ordering* inside a
-slot for TIM/OUT/GOTO/IF is tagged [INFER] in the firmware annotations; the
-layouts below follow the decoded ``movx``/``inc DPTR`` sequences in
-``prog_exec`` and are marked accordingly.
+slot for TIM/OUT/GOTO follows the decoded ``movx``/``inc DPTR`` sequences in
+``prog_exec`` and is [SIM]-verified by running each through the real ROM
+(tests/test_sim_ucsim.py).  IF's label+mask ordering is decoded best-effort from
+the ROM; the only [INFER] left is the POS-store pot-capture semantic and the
+DEL. (0x36) 3-byte meaning.
 """
 
 from __future__ import annotations
@@ -107,9 +109,11 @@ class CompiledProgram:
 
 
 # --- per-instruction slot builders -------------------------------------------
-# Operand orderings follow prog_exec's decoded movx/inc-DPTR reads.  [BYTE] for
-# the reads; the mapping of a given source instruction to the class is [INFER]
-# where the firmware annotations say so.
+# Operand orderings follow prog_exec's decoded movx/inc-DPTR reads ([BYTE]) and
+# are confirmed by running each instruction through the real ROM in ucSim
+# ([SIM]: tests/test_sim_ucsim.py).  The one remaining [INFER] is the *semantic*
+# of POS-store (that a bare POS captures the live pot positions), which the
+# compiler cannot observe and emits as a zero placeholder.
 
 def _slot_pos_axis(node: P.PosAxis) -> Slot:
     """POS a . n  ->  move axis a to target n (class 0x60+axis).  [SIM]
@@ -130,38 +134,41 @@ def _slot_pos_axis(node: P.PosAxis) -> Slot:
 
 
 def _slot_pos_store(node: P.PosStore) -> Slot:
-    """POS (store all axes).  All-axes set-position: opcode 0x07, 6 bytes.  [INFER]
+    """POS (store all axes).  All-axes set-position: opcode 0x07, 6 bytes.
 
-    The Teach Box ``POS ENT`` captures the *current* arm position; in the stored
-    stream that is the all-axes set-position opcode (low-3 == 7).  The 6 operand
-    bytes are the taught positions; a bare ``POS`` with no known positions emits
-    zeros (placeholder, as the real Teach Box fills these from the live pots).
+    The all-axes set-position opcode (low-3 == 7) is [SIM] (the firmware decodes
+    the 0x00+axis class).  What stays [INFER] is only the *semantic* that a bare
+    Teach Box ``POS ENT`` captures the live pot positions into these 6 bytes --
+    the compiler cannot observe live pots, so it emits a zero placeholder.
     """
     return Slot(isa.OP_POS_SET | isa.AXIS_ALL, [0] * 6, node.line)
 
 
 def _slot_tim(node: P.Tim) -> Slot:
-    """TIM t  ->  bit4 set, bit3 set (0x18 class).  [BYTE] reads / [INFER] mapping
+    """TIM t  ->  bit4 set, bit3 set (0x18 class).  [SIM]
 
     prog_exec 0x09E5: ``movx -> 0x1A`` (lo), ``inc DPTR``, ``movx; inc A -> 0x1B``
     (hi).  Firmware stores hi+1 (``inc A``), so to produce an effective delay of
     ``t`` the stored high byte is ``(t>>8)`` and the firmware adds 1 as a loop
     pre-decrement convention.  We store the raw lo/hi; the +1 is the executor's.
-    Two operand bytes: lo, hi.  [BYTE]
+    Two operand bytes: lo, hi.  [SIM] verified: TIM 50 delivers operand 0x32 to
+    the delay store (tests/test_sim_ucsim.py::test_direct_load_tim_operand).
     """
     t = node.delay & 0xFFFF
     return Slot(isa.OP_TIM, [t & 0xFF, (t >> 8) & 0xFF], node.line)
 
 
 def _slot_out(node: P.Out) -> Slot:
-    """OUT k +/-  ->  bit4 set, bit3 clear (0x10 class).  [BYTE] reads / [INFER]
+    """OUT k +/-  ->  bit4 set, bit3 clear (0x10 class).  [SIM]
 
     prog_exec 0x09D4: ``anl A,#0x03`` (R2 = opcode low 2 bits), then ``movx -> R0``
     and ``lcall 0x07D3`` (portb_write).  So the port selection is carried in the
     opcode low bits and the state in one operand byte.  Teach Box with the pendant
     exposes outputs 1..3; over serial up to 8.  We encode ``(k-1)`` into the low
     2 bits (firmware masks ``#0x03``) and the +/- state in the operand byte:
-    '+' = set LOW = 0x00, '-' = clear HIGH = 0x01.  [INFER]
+    '+' = set LOW = 0x00, '-' = clear HIGH = 0x01.  [SIM] verified: a compiled OUT
+    reaches portb_write and advances PC one slot
+    (tests/test_sim_ucsim.py::test_direct_load_out_decodes_and_advances_slot).
     """
     port_fw = (node.port - 1) & 0x03
     state = 0x00 if node.set_low else 0x01

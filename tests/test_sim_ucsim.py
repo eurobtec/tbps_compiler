@@ -33,7 +33,7 @@ from tbps_compiler import isa
 
 rob3_ucsim = pytest.importorskip("rob3_ucsim")
 
-# Firmware landmarks (firmware/src/annotated/program.asm) ---------------------
+# Firmware landmarks (ROB3 8031 ROM) -----------------------------------------
 PROG_EXEC = 0x0941        # instruction executor entry
 PORTB_WRITE_LCALL = 0x09D9  # LCALL 0x07D3 inside the OUT branch
 TIM_STORE = 0x09E6        # MOV 0x1A,A inside the TIM branch
@@ -174,7 +174,7 @@ def test_direct_load_pos_moves_axis(engine):
 
 
 # --- RS-232 upload path ------------------------------------------------------
-# The firmware's 0x81 block-upload protocol (rs232.asm, RX handler at 0x0305):
+# The firmware's 0x81 block-upload protocol (RX handler at 0x0305):
 #   byte 0: 0x81            -> block mode (sets 0x24.3), frame in progress
 #   byte 1: <run pointer>   -> rx_setptr (0x037B): R0 = run length, sets 0x24.4
 #   byte 2: <count>         -> rx_setcount (0x0380): R2 = count; stream pointer

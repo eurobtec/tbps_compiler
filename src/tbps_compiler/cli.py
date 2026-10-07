@@ -93,14 +93,17 @@ def main(argv: list[str] | None = None) -> int:
         "(TBPS source-level debugger; needs UCSIM_51 + ROB3_HEX)",
     )
     ap.add_argument(
-        "--native",
-        action="store_true",
-        help="emit native MCS-51 (sdas8051) assembly instead of bytecode "
-        "(AOT backend; reuses the firmware RAM map + dout_write 0x07D0)",
+        "--arch", default=None,
+        help="emit assembly for this CPU architecture instead of bytecode "
+        "(e.g. 'mcs51'); selecting an arch switches to the compiled backend",
+    )
+    ap.add_argument(
+        "--board", default=None,
+        help="target board/executor for --arch output (default: rob3)",
     )
     ap.add_argument(
         "--org", default="0x2000",
-        help="origin address for --native output (default 0x2000)",
+        help="origin address for --arch (compiled) output (default 0x2000)",
     )
     args = ap.parse_args(argv)
 
@@ -125,19 +128,27 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: cannot read {args.source}: {e}", file=sys.stderr)
         return 2
 
-    if args.native:
-        from .native import generate_asm
+    if args.arch is not None or args.board is not None:
+        from .backend import generate_asm
+        from .arch import ARCHS, DEFAULT_ARCH
+        from .board import BOARDS, DEFAULT_BOARD
         from .errors import CompileError
+        arch = DEFAULT_ARCH if args.arch is None else ARCHS.get(args.arch)
+        board = DEFAULT_BOARD if args.board is None else BOARDS.get(args.board)
+        if arch is None:
+            ap.error(f"unknown --arch {args.arch!r}; choices: {', '.join(ARCHS)}")
+        if board is None:
+            ap.error(f"unknown --board {args.board!r}; choices: {', '.join(BOARDS)}")
         try:
             org = int(args.org, 0)
-            asm = generate_asm(src, org=org)
+            asm = generate_asm(src, org=org, arch=arch, board=board)
         except CompileError as e:
             print(f"compilation failed:\n{e}", file=sys.stderr)
             return 1
         if args.output:
             with open(args.output, "w") as f:
                 f.write(asm)
-            print(f"wrote native asm to {args.output}")
+            print(f"wrote {arch.name} assembly to {args.output}")
         else:
             print(asm)
         return 0

@@ -1,9 +1,8 @@
 """ROM-faithful compiler for the ROB3 Teach Box Programming System (TBPS).
 
-The byte encoding emitted here is derived from the ROB3 8031 firmware
-(``firmware/src/annotated/program.asm`` + ``rs232.asm``) and is intended to be
-verified against the real ROM in ucSim.  See :mod:`tbps_compiler.isa` for the
-provenance-tagged encoding reference.
+The byte encoding emitted here is derived from the ROB3 8031 firmware and is
+intended to be verified against the real ROM in ucSim.  See
+:mod:`tbps_compiler.isa` for the provenance-tagged encoding reference.
 """
 
 from __future__ import annotations

@@ -1,14 +1,13 @@
 """Authoritative TBPS instruction encoding, derived from the ROB3 8031 ROM.
 
-Every constant here is traceable to the annotated firmware. Provenance tags
+Every constant here is traceable to the ROB3 8031 ROM. Provenance tags
 follow the project convention:
 
 * ``[BYTE]`` -- decoded directly from the ROM bytes (byte-exact).
 * ``[SIM]``  -- confirmed by running the ROM in ucSim and observing state.
 * ``[INFER]`` -- inferred from context; a hypothesis, not yet proven.
 
-Ground truth (``firmware/src/annotated/program.asm`` + ``rs232.asm`` +
-``hardware/host/command.md``):
+Ground truth is the ROB3 8031 ROM:
 
 The stored-program instruction stream reuses the *same* command-byte bit
 fields the RS-232 handler decodes (``cmd_class0`` at 0x0440).  The executor
@@ -46,7 +45,7 @@ from __future__ import annotations
 from enum import Enum
 
 
-# --- SRAM program-store layout (firmware/src/annotated/program.asm) ----------
+# --- SRAM program-store layout (ROB3 8031 ROM) -------------------------------
 # Page 0x80 = 0x8000 holds the 2-byte-per-label table + header/end sentinels;
 # the program body starts at page 0x81 = 0x8100.  [BYTE][SIM]
 SRAM_LABEL_PAGE = 0x80          # IRAM 0x3E = PROG_PAGE   [SIM: =0x80]
